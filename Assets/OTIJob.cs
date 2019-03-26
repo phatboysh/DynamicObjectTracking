@@ -4,12 +4,13 @@
     using System.Threading;
     using System.Collections.Generic;
 
-    public struct OctreeThreadParameters
+    public class OctreeThreadParameters
     {
         public int TotalTrackedObjects;
         public List<int> ObjectIDs;
         public Dictionary<int, KeyValuePair<float, Vector3>> Coordinates;
         public Dictionary<int, string> DynamicObjects;
+
     }
 
     public class OTIJob
@@ -51,7 +52,7 @@
 
         public virtual void Abort()
         {
-            JobThread.Abort();
+            JobThread?.Abort();
         }
 
         protected virtual void ThreadOctree(OctreeThreadParameters otp) { }

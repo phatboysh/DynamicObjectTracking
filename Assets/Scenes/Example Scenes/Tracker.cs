@@ -11,6 +11,7 @@ namespace oti.AI
         /// <summary>
         /// Cached ref to WorldMonitors class
         /// </summary>
+        [HideInInspector]
         public WorldMonitors WorldMonitors;
 
         /// <summary>
@@ -43,7 +44,7 @@ namespace oti.AI
             if(ConflictingObjects == default(List<GameObject>))
             {
                 if(PrintCollisionsToConsole)
-                    Debug.Log("GameObject " + TrackedObject + "'s conflict(s) have ended.");
+                    Debug.Log("GameObject " + TrackedObject + "'s conflict(s) have ended and logged for " + gameObject.name);
 
                 return;
             }

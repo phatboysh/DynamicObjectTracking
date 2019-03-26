@@ -167,7 +167,8 @@ namespace oti.AI
 
                 if (GUILayout.Button("Delete " + typeOfFactor, EditorStyles.miniButton, miniButtonWidth))
                 {
-                    instance.TrackedObjects[i].TrackedObjects.RemoveAt(instance.TrackedObjects[i].TrackedObjects.Count - 1);
+                    if(instance.TrackedObjects[i].TrackedObjects.Count - 1 >= 0)
+                        instance.TrackedObjects[i].TrackedObjects.RemoveAt(instance.TrackedObjects[i].TrackedObjects.Count - 1);
                 }
 
                 EditorGUILayout.EndHorizontal();

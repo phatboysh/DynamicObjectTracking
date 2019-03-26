@@ -4,13 +4,6 @@ using System.Threading;
 
 namespace oti.AI
 {
-    public struct TrackedObjectStates
-    {
-        public Dictionary<int, string[]> NewOrChangedStates;
-        public List<int[]> ConflictingIDs;
-        public List<int> PriorConflictingIDs;
-    }
-
     /// <summary>
     /// OTI AI access point for tracked objects calculations run on auxilliary thread.
     /// </summary>
@@ -115,7 +108,7 @@ namespace oti.AI
         {
             updatePositions = new Vector3[otp.ObjectIDs.Count];
             float[] thresholds = new float[otp.ObjectIDs.Count];
-
+            
             for (int i = 0; i < otp.ObjectIDs.Count; i++)
             {
                 KeyValuePair<float, Vector3> pos;
@@ -187,6 +180,7 @@ namespace oti.AI
                     {
                         MasterList[i] = new string[0];
                         oldConflicts.Add(i);
+                        WorldMonitor.Instance.TrackedObjectDataRef[i].ConflictingObjects.Clear(); //prepare off main thread
                     }
                 }
             }
@@ -195,6 +189,8 @@ namespace oti.AI
 
             foreach (KeyValuePair<int, string[]> currentConflict in results)
             {
+                WorldMonitor.Instance.TrackedObjectDataRef[currentConflict.Key].ConflictingObjects.Clear(); //prepare off main thread
+
                 string[] oldState, conflictState;
                 int key = currentConflict.Key;
 
@@ -244,7 +240,14 @@ namespace oti.AI
                 NewOrChangedStates = newOrStateChangedConflicts,
                 ConflictingIDs = conflictingIDs,
                 PriorConflictingIDs = oldConflicts
-            };
+            };            
         }
+    }
+
+    public class TrackedObjectStates
+    {
+        public Dictionary<int, string[]> NewOrChangedStates;
+        public List<int[]> ConflictingIDs;
+        public List<int> PriorConflictingIDs;
     }
 }

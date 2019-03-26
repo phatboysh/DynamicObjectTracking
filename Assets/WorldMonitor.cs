@@ -4,21 +4,12 @@ using UnityEngine;
 
 namespace oti.AI
 {
-    public struct TrackedObjectData
-    {
-        public float Threshold;
-        public GameObject Object;
-        public List<GameObject> ConflictingObjects;
-        public List<WorldMonitors> ObjectOwners;
-        public Vector3 ObjectPosition;
-    }
-
     /// <summary>
     /// Singleton which manages objects from the WorldMonitors classes
     /// </summary>
     public class WorldMonitor : MonoBehaviour
     {
-        /// <summary>
+         /// <summary>
         /// O(m*N^2) method - preferrable for a small number of objects
         /// </summary>
         public bool ExhaustiveMethod;
@@ -30,6 +21,7 @@ namespace oti.AI
 
         /// <summary>
         /// Tracked object's ID and associated properties
+        /// int Object IDs are used to reference GameObjects since they are not threadsafe
         /// </summary>
         public Dictionary<int, TrackedObjectData> TrackedObjectDataRef = new Dictionary<int, TrackedObjectData>();
 
@@ -140,7 +132,8 @@ namespace oti.AI
                     TrackedObjectData TOData = new TrackedObjectData();
                     List<string> affiliations = new List<string>();
 
-                    TrackedObjectDataRef[tos.Key].ConflictingObjects.Clear();
+                    /*/ Cleared off of the main thread in Octree.cs: TrackedObjectDataRef[tos.Key].ConflictingObjects.Clear(); /*/
+
                     TrackedObjectDataRef.TryGetValue(tos.Key, out TOData);
 
                     //add objects to TrackedObjectStates
@@ -164,7 +157,7 @@ namespace oti.AI
                 {
                     TrackedObjectData TOData;
                     TrackedObjectDataRef.TryGetValue(tos, out TOData);
-                    TrackedObjectDataRef[tos].ConflictingObjects.Clear();
+                    /*/ Cleared off of the main thread in Octree.cs: TrackedObjectDataRef[tos].ConflictingObjects.Clear(); /*/
 
                     if (TOData.ObjectOwners.Count > 0)
                     {
@@ -237,11 +230,13 @@ namespace oti.AI
                                 TrackedObjectData TOData;
                                 TrackedObjectDataRef.TryGetValue(id, out TOData);
                                 TOData.ObjectOwners.Add(agentMonitors[i]);
+                                //TrackedObjectDataRef[id] = TOData;
                             }
                             else
                             {
-                                gameObjectIDReference.Add(go, TotalTrackedObjects);
-                                gameObjectReference.Add(TotalTrackedObjects, go);
+                                gameObjectIDReference.Add(go, TotalTrackedObjects); //object ID = current number of tracked objects
+                                gameObjectReference.Add(TotalTrackedObjects, go); //using IDs necessary to run aux thread
+
                                 TrackedObjectData TOData = new TrackedObjectData
                                 {
                                     Object = go,
@@ -271,7 +266,7 @@ namespace oti.AI
                 ObjectIDs = new List<int>(TrackedObjectDataRef.Keys),
                 TotalTrackedObjects = TotalTrackedObjects,
                 Coordinates = getUpdatedPositions(new List<int>(TrackedObjectDataRef.Keys)),
-                DynamicObjects = TrackedObjectAffiliations,
+                DynamicObjects = TrackedObjectAffiliations
             };
 
             //construct initial octree            
@@ -434,5 +429,14 @@ namespace oti.AI
             TotalTrackedObjects--;
         }
         #endregion
+    }
+
+    public class TrackedObjectData
+    {
+        public float Threshold;
+        public GameObject Object;
+        public List<GameObject> ConflictingObjects;
+        public List<WorldMonitors> ObjectOwners;
+        public Vector3 ObjectPosition;
     }
 }

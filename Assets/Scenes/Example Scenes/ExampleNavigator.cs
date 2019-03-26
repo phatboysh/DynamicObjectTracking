@@ -6,7 +6,12 @@ namespace oti.AI
     /// Moves tracked objects in Dynamic Objects Tracking example scene
     /// </summary>
     public class ExampleNavigator : MonoBehaviour
-    { 
+    {
+        /// <summary>
+        /// Setting false will allow user to investigate collision reporting on their own accord
+        /// </summary>
+        public bool MoveAuto = true;
+
         /// <summary>
         /// represents length of size of box used for navigation
         /// </summary>
@@ -29,7 +34,7 @@ namespace oti.AI
 
         void Start()
         {
-            velocity = Random.Range(1, 15);
+            velocity = MoveAuto ? Random.Range(1, 5) : 0;
             direction = new Vector3(Random.Range(-1, 1), 0, Random.Range(-1, 1));
         }
 
@@ -49,7 +54,7 @@ namespace oti.AI
         public void ObjectConflict(Vector3 positionOfConflictor)
         {
             //do something with the information -- note that object affiliation and all conflicting objects and types are available in the event
-            direction += new Vector3(Random.Range(-0.25f, 0.25f), 0, Random.Range(-0.25f, 0.25f));
+            direction = (direction + new Vector3(Random.Range(-0.25f, 0.25f), 0, Random.Range(-0.25f, 0.25f))).normalized;
         }
 
         void Update()
@@ -67,8 +72,8 @@ namespace oti.AI
                 escapedBounds = xCrossed || zCrossed;
             }
 
-            direction = xCrossed ? new Vector3(-direction.x, 0, direction.z) : direction;
-            direction = zCrossed ? new Vector3(direction.x, 0, -direction.z) : direction;
+            direction = xCrossed ? new Vector3(-direction.x, 0, direction.z).normalized : direction;
+            direction = zCrossed ? new Vector3(direction.x, 0, -direction.z).normalized : direction;
 
             transform.Translate(velocity * direction * Time.deltaTime, Space.World);
         }
