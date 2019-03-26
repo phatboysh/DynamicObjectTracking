@@ -11,11 +11,13 @@ namespace oti.AI
         /// <summary>
         /// User defined list of GameObject to track
         /// </summary>
+        [HideInInspector] // hides in child classes only
         public List<TrackedObjectContainer> TrackedObjects = new List<TrackedObjectContainer>();
 
         /// <summary>
         /// User defined area for defining close objects
         /// </summary>
+        [HideInInspector] // hides in child classes only
         public List<float> ThresholdSet = new List<float>();
 
         /// <summary>
@@ -23,23 +25,39 @@ namespace oti.AI
         /// </summary>
         /// <param name="conflictingTypes">The types of objects as defined in WorldMonitors</param>
         /// <param name="conflictOrigins">The positions of the objects causing the conflict</param>
-        public delegate void ObjectConflictRaiser(GameObject objectWithConflict, List<GameObject> conflictingObjects = default(List<GameObject>), List<string> conflictingTypes = default(List<string>));
+        public delegate void ObjectConflictHandler(GameObject objectWithConflict, GameObject[] conflictingObjects, string[] conflictingTypes);
 
         /// <summary>
-        /// Event to raise awareness to listeners of the conflict
+        /// Event to raise awareness to listeners of the increase tracked object conflict
         /// </summary>
-        public event ObjectConflictRaiser Conflicts;
+        public event ObjectConflictHandler ConflictEnterers;
+
+        /// <summary>
+        /// Event to raise awareness to listeners of the reduced tracked object conflict
+        /// </summary>
+        public event ObjectConflictHandler ConflictLeavers;
+
+        /// <summary>
+        /// Event to inform listeners all conflicting objects have ended
+        /// </summary>
+        public event ObjectConflictHandler ConflictEnd;
 
         //Provide WorldMonitor a method to raise event from
-        public void RaiseConflicts(GameObject objectWithConflict, List<GameObject> conflictingObjects, List<string> conflictingTypes)
+        public void RaiseConflictEnterers(GameObject objectWithConflict, GameObject[] conflictingObjects, string[] conflictingTypes)
         {
-            Conflicts?.Invoke(objectWithConflict, conflictingObjects, conflictingTypes);
+            ConflictEnterers?.Invoke(objectWithConflict, conflictingObjects, conflictingTypes);
+        }
+
+        //Provide WorldMonitor a method to raise event from
+        public void RaiseConflictLeavers(GameObject objectWithConflict, GameObject[] conflictingObjects, string[] conflictingTypes)
+        {
+            ConflictLeavers?.Invoke(objectWithConflict, conflictingObjects, conflictingTypes);
         }
 
         //Provide WorldMonitor a method to raise event from
         public void EndConflicts(GameObject objectWithEndedConflict)
         {
-            Conflicts?.Invoke(objectWithEndedConflict);
+            ConflictEnd?.Invoke(objectWithEndedConflict, default(GameObject[]), default(string[]));
         }
 
         private void Start()
@@ -49,8 +67,9 @@ namespace oti.AI
             {
                 new GameObject(gameObject.name + "_WMContainer", typeof(WorldMonitor));
             }
-        }
+        }        
     }
+
 
     [CanEditMultipleObjects]
     [CustomEditor(typeof(WorldMonitors))]
@@ -69,7 +88,7 @@ namespace oti.AI
         /// <summary>
         /// Used to determine if field inspector should be exposed
         /// </summary>
-        bool[] show = new bool[26]; //limit 26 sets of tracked objects
+        bool[] show = new bool[701]; //limit 701 sets of tracked objects
 
         /// <summary>
         /// Access to components in WorldMonitors
@@ -103,8 +122,8 @@ namespace oti.AI
 
             numberTrackedFields = Mathf.Max(1, instance.TrackedObjects.Count);
 
-            if (numberTrackedFields >= maxNumberTrackedFields)
-                Debug.LogError(OTIEditorBase._ExplanationOfTrackedObjectLimit);            
+            if (numberTrackedFields >= 701)
+                Debug.LogError("701 tracked fields is the limit.");            
 
             if (instance.TrackedObjects.Count == 0)
                 instance.TrackedObjects.Add(new TrackedObjectContainer());
@@ -114,13 +133,16 @@ namespace oti.AI
 
             addMinusIntValueButtons(ref numberTrackedFields, ref instance.TrackedObjects, ref instance.ThresholdSet, "Add Tracked Field", "Remove Tracked Field", maxNumber: maxNumberTrackedFields);
 
-            OTIEditorUtility.Instance.HorizontalLineProperty(ref instance.ThresholdSet, 0, "Tracked Object Set A", "Threshold Distance A", "Assign objects for tracking against each other. Set A will be tracked against all others.");
-            trackedObjectListManager(0, guiContent, headingStyle, subHeadingStyle, "", "Tracked Objects", ref show[0], padding: 1);
-
-            for (int i = 1; i < numberTrackedFields; i++)
+            if(instance.ThresholdSet.Count > 0)
             {
-                OTIEditorUtility.Instance.HorizontalLineProperty(ref instance.ThresholdSet, i, "Tracked Object Set " + OTIEditorBase._Alphabetic[i], "Threshold Distance " + OTIEditorBase._Alphabetic[i], "Assign objects for tracking against each other. Set " + OTIEditorBase._Alphabetic[i] + " will be tracked against all others.");
-                trackedObjectListManager(i, guiContent, headingStyle, subHeadingStyle, "", "Tracked Objects", ref show[i], padding: 1);
+                OTIEditorUtility.Instance.HorizontalLineProperty(ref instance.ThresholdSet, 0, "Tracked Object Set A", "Threshold Distance A", "Assign objects for tracking against each other. Set A will be tracked against all others.");
+                trackedObjectListManager(0, guiContent, headingStyle, subHeadingStyle, "", "Tracked Objects", ref show[0], padding: 1);
+
+                for (int i = 1; i < numberTrackedFields; i++)
+                {
+                    OTIEditorUtility.Instance.HorizontalLineProperty(ref instance.ThresholdSet, i, "Tracked Object Set " + OTIEditorBase._AlphabetAssembler(i), "Threshold Distance " + OTIEditorBase._AlphabetAssembler(i), "Assign objects for tracking against each other. Set " + OTIEditorBase._AlphabetAssembler(i) + " will be tracked against all others.");
+                    trackedObjectListManager(i, guiContent, headingStyle, subHeadingStyle, "", "Tracked Objects", ref show[i], padding: 1);
+                }
             }
 
             serializedObject.ApplyModifiedProperties();

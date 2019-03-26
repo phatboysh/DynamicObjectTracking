@@ -15,9 +15,9 @@ namespace oti.AI
          */
 
         /// <summary>
-        /// The octree. Access should be restricted to this class.
+        /// The octree. Access should be restricted to this class. Using int to ID GameObjects outside main thread.
         /// </summary>        
-        private PointOctree<int> pointOctree;
+        public PointOctree<int> PointOctree;
 
         /// <summary>
         /// True entire time Octree thread is running
@@ -32,7 +32,7 @@ namespace oti.AI
         /// <summary>
         /// Record of every tracked object's current state of conflict and which categories it's in conflict with
         /// </summary>
-        public Dictionary<int, string[]> MasterList = new Dictionary<int, string[]>();
+        public Dictionary<int, List<int>> MasterList = new Dictionary<int, List<int>>();
 
         /// <summary>
         /// Positions of tracked objects.
@@ -52,7 +52,7 @@ namespace oti.AI
         /// </summary>
         public void Initialize(int initialWorldSize, Vector3 initialPosition, int smallestObjectSize)
         {
-            pointOctree = new PointOctree<int>(initialWorldSize, initialPosition, smallestObjectSize);
+            PointOctree = new PointOctree<int>(initialWorldSize, initialPosition, smallestObjectSize);
         }
         
         /// <summary>
@@ -106,148 +106,123 @@ namespace oti.AI
         /// </summary>
         private TrackedObjectStates evaluateOctree(OctreeThreadParameters otp)
         {
-            updatePositions = new Vector3[otp.ObjectIDs.Count];
-            float[] thresholds = new float[otp.ObjectIDs.Count];
-            
-            for (int i = 0; i < otp.ObjectIDs.Count; i++)
+            int alloc = WorldMonitor.Instance.AllocationSpace;
+            updatePositions = new Vector3[alloc]; // otp.ObjectIDs.Count
+            float[] thresholds = new float[alloc]; // otp.ObjectIDs.Count
+
+            //for (int i = 0; i < otp.ObjectIDs.Count; i++)
+            foreach (int id in otp.ObjectIDs)
             {
                 KeyValuePair<float, Vector3> pos;
-                int objectID = otp.ObjectIDs[i];
 
-                if (!otp.Coordinates.TryGetValue(objectID, out pos))
+                if (!otp.Coordinates.TryGetValue(id, out pos))
                     Debug.LogError("unknown object position request in octree eval");
 
-                thresholds[i] = pos.Key;
-                updatePositions[i] = pos.Value;
+                thresholds[id] = pos.Key;
+                updatePositions[id] = pos.Value;
 
-                pointOctree.Remove(objectID);
-                pointOctree.Add(objectID, pos.Value);
+                PointOctree.Remove(id);
+                PointOctree.Add(id, pos.Value);
             }
 
-            List<int[]> locals = new List<int[]>();
-            for(int i = 0; i < otp.ObjectIDs.Count; i++)
-            {
-                locals.Add(pointOctree.GetNearby(updatePositions[i], thresholds[i]));
-            }         
-                        
-            Dictionary<int, string[]> conflicts = new Dictionary<int, string[]>();
-            for(int i = 0; i < locals.Count; i++)
-            {
-                string localAffiliation;
-                string ownerAffiliation;
-                List<string> localConflicts = new List<string>();
+            List<int[]> enteringIDs = new List<int[]>();
+            List<int[]> leavingIDs = new List<int[]>();
 
-                for (int j = 0; j < locals[i].Length; j++)
+            List<int> parentIDLeavers = new List<int>();
+            List<int> parentIDEnterers = new List<int>();
+
+            int ind = 0;
+            foreach(int id in otp.ObjectIDs)
+            {
+                List<int> validConflicts = new List<int>();
+                List<int> stayers = new List<int>();
+
+                int[] areaObjects = PointOctree.GetNearby(updatePositions[id], thresholds[id]);
+
+                for (int j = 0; j < areaObjects.Length; j++)
                 {
-                    #region Find Conflicts
-                    if (otp.DynamicObjects.TryGetValue(locals[i][j], out localAffiliation) && otp.DynamicObjects.TryGetValue(otp.ObjectIDs[i], out ownerAffiliation))
-                    {
-                        if (ownerAffiliation != localAffiliation && locals[i].Length > 0 && !localConflicts.Contains(localAffiliation))
-                        {
-                            localConflicts.Add(localAffiliation);
+                    string affiliateObj = WorldMonitor.Instance.TrackedObjectAffiliations[id];
+                    string affiliateCompare = WorldMonitor.Instance.TrackedObjectAffiliations[areaObjects[j]];
 
-                            if (conflicts.ContainsKey(otp.ObjectIDs[i]))
-                            {
-                                conflicts[otp.ObjectIDs[i]] = localConflicts.ToArray();
-                            }
-                            else
-                            {
-                                conflicts.Add(otp.ObjectIDs[i], localConflicts.ToArray());
-                            }
-                        }
+                    /*
+                     * run conflict validity checks: if not the same object && not an object of the same class type && is a new conflict
+                     */
+
+                    if (areaObjects[j] != id && !MasterList[id].Contains(areaObjects[j]) && string.Compare(affiliateObj, affiliateCompare) != 0)
+                    {
+                        if (!parentIDEnterers.Contains(id))
+                            parentIDEnterers.Add(id);
+
+                        MasterList[id].Add(areaObjects[j]); // add conflicting object to master list of current conflicts
+                        validConflicts.Add(areaObjects[j]); // *new* conflicts
+                        stayers.Add(areaObjects[j]); // use to look for conflicts that have ended
                     }
-                    #endregion
-                }
-            }
-
-            return evaluateConflictResults(MasterList, conflicts, locals);
-        }
-
-        /// <summary>
-        /// Interprets results to update MasterList and find expired conflicts.
-        /// </summary>
-        /// <param name="lastUpdate"> MasterList as of last Octree update </param>
-        /// <param name="results"> Conflict states returned from this iteration </param>
-        private TrackedObjectStates evaluateConflictResults(Dictionary<int, string[]> lastUpdate, Dictionary<int, string[]> results, List<int[]> conflictingIDs)
-        {
-            List<int> oldConflicts = new List<int>();
-            
-            for(int i = 0; i < lastUpdate.Count; i++)
-            {
-                if (MasterList[i].Length != 0)
-                {
-                    if (!results.ContainsKey(i)) // since key is not in results but is in Master, this conflict has ended
+                    else if (MasterList[id].Contains(areaObjects[j]))
                     {
-                        MasterList[i] = new string[0];
-                        oldConflicts.Add(i);
-                        WorldMonitor.Instance.TrackedObjectDataRef[i].ConflictingObjects.Clear(); //prepare off main thread
+                        stayers.Add(areaObjects[j]); // this is an object staying in conflict
                     }
                 }
-            }
 
-            Dictionary<int, string[]> newOrStateChangedConflicts = new Dictionary<int, string[]>();
+                bool leaverDetected = false;
+                List<int> leavers = new List<int>();
 
-            foreach (KeyValuePair<int, string[]> currentConflict in results)
-            {
-                WorldMonitor.Instance.TrackedObjectDataRef[currentConflict.Key].ConflictingObjects.Clear(); //prepare off main thread
-
-                string[] oldState, conflictState;
-                int key = currentConflict.Key;
-
-                if (!lastUpdate.TryGetValue(key, out oldState)) //an object has been added to the tracking list or Octree initiating
+                foreach (int _id in MasterList[id]) // look at master list's record of conflicts for this parent ID - if it isn't in stayers, it has left the conflict area or been destroyed
                 {
-                    lastUpdate.Add(key, results[key]);
-                    oldState = results[key];
-                }
-
-                if (!results.TryGetValue(key, out conflictState))
-                    Debug.LogError("Undefined state for key (current)");
-
-                if (oldState.Length > 0 && conflictState.Length > 0)
-                {
-                    bool changeDetected = false;
-                    if (oldState.Length != conflictState.Length)
+                    if (!stayers.Contains(_id))
                     {
-                        changeDetected = true;
+                        leaverDetected = true;
+                        leavers.Add(_id);
                     }
-                    else
-                    {                        
-                        for (int i = 0; i < oldState.Length; i++)
-                        {
-                            if (string.Compare(oldState[i], conflictState[i]) == -1)
-                            {
-                                changeDetected = true;
-                                i = oldState.Length;
-                            }
-                        }
-                    }
-                    
-                    if (changeDetected) // else the master list is currently correct
+
+                    switch (WorldMonitor.Instance.ConflictEndMode)
                     {
-                        newOrStateChangedConflicts.Add(key, conflictState);
-                        MasterList[key] = conflictState;
-                    }   
+                        case ConflictEndMode.OnAllConflictsEnded:
+                            if (leavers.Count == MasterList[id].Count)
+                                parentIDLeavers.Add(id);
+                            break;
+                        case ConflictEndMode.OnIndividualConflictEnded:
+                            if (leaverDetected && !parentIDEnterers.Contains(id))
+                                parentIDLeavers.Add(id);
+                            break;
+                    }
                 }
-                else
-                {
-                    newOrStateChangedConflicts.Add(key, conflictState);
-                    MasterList[key] = conflictState;
-                }
+
+                foreach (int leaver in leavers)
+                    MasterList[id].Remove(leaver);
+
+                int numValid = leavers.ToArray().Length;
+
+                if (numValid > 0)
+                    leavingIDs.Add(leavers.ToArray());
+
+                numValid = validConflicts.ToArray().Length;
+
+                if (numValid > 0)
+                    enteringIDs.Add(validConflicts.ToArray());
+
+                ind++;
             }
 
             return new TrackedObjectStates
             {
-                NewOrChangedStates = newOrStateChangedConflicts,
-                ConflictingIDs = conflictingIDs,
-                PriorConflictingIDs = oldConflicts
-            };            
+                ParentIDEnterers = parentIDEnterers.ToArray(), // parent IDs of new or increased conflict states
+                ParentIDLeavers = parentIDLeavers.ToArray(), // parent IDs of expired or reduced conflict states
+                LeavingIDs = leavingIDs, // child IDs - ended conflict(s)
+                EnteringIDs = enteringIDs, // child IDs - the conflict(s)
+                PriorConflictingIDs = parentIDLeavers // parent IDs that need informed all conflicts have ceased
+            };
         }
     }
 
+    /// <summary>
+    /// A reference of states for tracked objects
+    /// </summary>
     public class TrackedObjectStates
-    {
-        public Dictionary<int, string[]> NewOrChangedStates;
-        public List<int[]> ConflictingIDs;
+    {        
+        public int[] ParentIDEnterers;
+        public int[] ParentIDLeavers;
+        public List<int[]> EnteringIDs;
+        public List<int[]> LeavingIDs;
         public List<int> PriorConflictingIDs;
     }
 }

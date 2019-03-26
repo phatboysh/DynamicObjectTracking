@@ -7,7 +7,7 @@ using oti.AI;
 namespace oti.Editors
 {
     /// <summary>
-    /// This class is part of a much larger repository, many of these methods are not used in this repo.
+    /// This class is part of a much larger repository, not all of this may be used here.
     /// Feel free to use them if you wish.
     /// </summary>
     public class OTIEditorBase : Editor
@@ -77,11 +77,41 @@ namespace oti.Editors
             contentStyle.normal.textColor = OTIEditorFormat.OTINavy;
         }
 
-        public static string _ExplanationOfTrackedObjectLimit = "You cannot have more than 26 tracked object fields for an individual agent. If necessary, you will need to modify internal code inside WorldMonitors.cs and expand Alphabetic string[] in OTIEditorBase.";
-
         public static string _WorldMonitoringExplanation = "Use this utility to give the agent awareness of events going on in the environment.";
 
+        public static string _WorldMonitorSingleton = "The World Monitor: choose the parameters for your tracking system here.";
+
         public static string[] _Alphabetic = new string[26] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+
+        /// <summary>
+        /// Assembles a continuous alphabetic unique string from index i: A (i = 0), ...., AB (i = 27), ....., BC (i = 54), ... AAB etc
+        /// </summary>
+        public static string _AlphabetAssembler(int i)
+        {
+            string s = "";
+            int wh = -1;
+            for (int j = 0; j <= i; j += _Alphabetic.Length)
+            {
+                wh += 1;
+            }
+
+            for (int j = 0; j <= wh; j++)
+            {
+
+                if (j > 0)
+                {
+                    j = wh + 1;
+                    s += _Alphabetic[i % _Alphabetic.Length];
+                }
+                else
+                {
+                    s += wh >= 1 ? _Alphabetic[wh - 1] : _Alphabetic[i % _Alphabetic.Length];
+                }
+            }
+            return s;
+
+        }
+
     }
 
     public struct OTIEditorFormat
