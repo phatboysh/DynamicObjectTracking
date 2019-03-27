@@ -123,7 +123,7 @@ namespace oti.AI
             numberTrackedFields = Mathf.Max(1, instance.TrackedObjects.Count);
 
             if (numberTrackedFields >= 701)
-                Debug.LogError("701 tracked fields is the limit.");            
+                Debug.LogWarning("701 tracked fields is the limit, additional fields must be added at runtime.");            
 
             if (instance.TrackedObjects.Count == 0)
                 instance.TrackedObjects.Add(new TrackedObjectContainer());

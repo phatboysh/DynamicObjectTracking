@@ -12,7 +12,7 @@ Although 701 different fields of tracked objects is likely beyond any need - add
 
 Every field has its own distance threshold value defining when it registers other tracked objects. Once another tracked object registers,
 an event is published to the subscribers (typically an agent or a game manager) monitoring that object. The event publishes the registered 
-GameObjects inside the threshold (GameObject[]) and their associated object field types (stringp[] "a","b","c"...).
+GameObjects inside the threshold (GameObject[]) and their associated object field types (string[] "a","b","c"...).
 
 # Getting Started
 
@@ -30,6 +30,12 @@ Any number of WorldMonitors can be used. If multiple instances of WorldMonitors 
 the same field for every instance of WorldMonitors tracking it. See how PinkSphere (1) appears in the following (separate) instances of 
 WorldMonitors - it is under "Set B" for each instance. The order of objects in Set B can be different for each WorldMonitors instance.
 
+**Multiple WorldMonitors Instances - Use Symmetrical Fields**
+<br/>
+<img src="Images/inspSymmetricObjects_1.PNG" width="333" />
+<img src="Images/inspSymmetricObjects_2.PNG" width="333" />
+<br/>
+
 **The WorldMonitor Component**
 <br/>
 <br/>
@@ -44,12 +50,6 @@ at the expense of performance.
 
 The exhaustive calculation is intended for benchmarking - however if you are using a very small number of tracked objects, exhaustive calculations
 may be better for your use case.
-
-**Multiple WorldMonitors Instances - Use Symmetrical Fields**
-<br/>
-<img src="Images/inspSymmetricObjects_1.PNG" width="333" />
-<img src="Images/inspSymmetricObjects_2.PNG" width="333" />
-<br/>
 
 # Events
 

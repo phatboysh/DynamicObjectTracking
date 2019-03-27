@@ -90,6 +90,7 @@ namespace oti.Editors
         {
             string s = "";
             int wh = -1;
+
             for (int j = 0; j <= i; j += _Alphabetic.Length)
             {
                 wh += 1;
@@ -97,7 +98,6 @@ namespace oti.Editors
 
             for (int j = 0; j <= wh; j++)
             {
-
                 if (j > 0)
                 {
                     j = wh + 1;
@@ -108,8 +108,8 @@ namespace oti.Editors
                     s += wh >= 1 ? _Alphabetic[wh - 1] : _Alphabetic[i % _Alphabetic.Length];
                 }
             }
-            return s;
 
+            return s;
         }
 
     }
