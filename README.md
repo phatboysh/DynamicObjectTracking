@@ -49,7 +49,7 @@ This system will *never* use more than one auxilliary thread. If you wish, you m
 at the expense of performance.
 
 The exhaustive calculation is intended for benchmarking - however if you are using a very small number of tracked objects, exhaustive calculations
-may be better for your use case.
+may be better for your use case. This method raises the conflict event every frame, as such it's functionality is similar to OnTriggerStay().
 
 # Events
 
@@ -123,8 +123,4 @@ rate on smaller scenes is about once/ frame).
 <img src="Images/smallScene.PNG" width="600" />
 <br/>
 
-This scene is preconfigured to log events to the console so you can quickly understand what data is published:
-
-<br/>
-<img src="Images/Console.PNG" width="377" />
-<br/>
+This scene is preconfigured to log events to the console so you can quickly understand how and what data is published.

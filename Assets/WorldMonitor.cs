@@ -90,7 +90,7 @@ namespace oti.AI
         public int MinimumObjectSize = 1;
 
         /// <summary>
-        /// Represents the count of non-empty tracked object slots from all WorldMonitor components
+        /// Represents the count of non-empty tracked object slots from all WorldMonitors components
         /// </summary>
         [HideInInspector]
         public int TotalTrackedObjects;
@@ -406,6 +406,7 @@ namespace oti.AI
 
         /// <summary>
         /// The alternative method for calculating object distances with distinguishing criteria & affiliations
+        /// This method is ~ O(i^2 * j^2 * n^2 * numObjTrackers)
         /// This can be improved by storing magnitude calculations for referenced objects (effectively dividing n by 2)
         /// If you see value in this and wish to add it please submit a PR
         /// </summary>
@@ -419,17 +420,29 @@ namespace oti.AI
                     {
                         float threshold = agentMonitors[i].ThresholdSet[j]; //threshold this object set is configured to raise conflicts at
                         GameObject go = agentMonitors[i].TrackedObjects[j].TrackedObjects[k]; //an individual object
-
-                        for (int l = 0; l < agentMonitors[i].TrackedObjects.Count; l++) //examine against other objects the agent wishes to compare
+                        if (go) // confirms non empty inspector slot
                         {
-                            for (int m = 0; m < agentMonitors[i].TrackedObjects[j].TrackedObjects.Count; m++) //for each individual object in the other sets
+                            for (int compareAgent = 0; compareAgent < agentMonitors.Length; compareAgent++)
                             {
-                                GameObject _go = agentMonitors[i].TrackedObjects[j].TrackedObjects[m];
-                                bool validObjects = (l != j && go && _go); //confirms if not empty inspector slot(s) and in a different tracked object set
-
-                                if (validObjects && (_go.transform.position - go.transform.position).sqrMagnitude < threshold * threshold)
+                                for (int compareSet = 0; compareSet < agentMonitors[compareAgent].TrackedObjects.Count; compareSet++) //examine against other objects the agent wishes to compare
                                 {
-                                    // do your logic here
+                                    for (int compareObject = 0; compareObject < agentMonitors[compareAgent].TrackedObjects[compareSet].TrackedObjects.Count; compareObject++) //for each individual object in the other sets
+                                    {
+                                        GameObject _go = agentMonitors[compareAgent].TrackedObjects[compareSet].TrackedObjects[compareObject];
+
+                                        if (_go && compareSet != j) // confirms non empty inspector slot && different sets
+                                        {
+                                            if ((_go.transform.position - go.transform.position).sqrMagnitude < threshold * threshold)
+                                            {
+                                                int id = gameObjectIDReference[go];
+                                                TrackedObjectData TOData;// = TrackedObjectDataRef[parentID];
+                                                TrackedObjectDataRef.TryGetValue(id, out TOData);
+
+                                                foreach (WorldMonitors wm in TOData.ObjectOwners)
+                                                    wm.RaiseConflictEnterers(TOData.Object, new GameObject[1] { _go }, new string[1] { TrackedObjectAffiliations[id] }); 
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
