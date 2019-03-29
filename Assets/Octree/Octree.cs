@@ -181,7 +181,7 @@ namespace oti.AI
                                 parentIDLeavers.Add(id);
                             break;
                         case ConflictEndMode.OnIndividualConflictEnded:
-                            if (leaverDetected && !parentIDEnterers.Contains(id))
+                            if (leaverDetected && !parentIDEnterers.Contains(id) && !parentIDLeavers.Contains(id))
                                 parentIDLeavers.Add(id);
                             break;
                     }

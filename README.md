@@ -35,6 +35,7 @@ WorldMonitors - it is under "Set B" for each instance. The order of objects in S
 <img src="Images/inspSymmetricObjects_1.PNG" width="333" />
 <img src="Images/inspSymmetricObjects_2.PNG" width="333" />
 <br/>
+<br/>
 
 **The WorldMonitor Component**
 <br/>
@@ -112,7 +113,7 @@ The last Tracking Agent in the heirarchy (in both scenes) is preconfigured to us
 <img src="Images/trackingScene.PNG" width="500" />
 <br/>
 
-TrackingExample demonstrates the system's large scale, dynamic object tracking ability, and an example method is used to change the tracked object's
+TrackingExample demonstrates the system's large scale dynamic object tracking ability, and an example method is used to change the tracked object's
 trajectories when conflicts are incurred by one enabled object (you can enable this behavior in the Tracker inspector). This scene includes
 500 initial tracked objects and inflates to 1,500 at runtime. All of these object's conflicts are always known by the agents monitoring them. 
 On a SurfaceBook (i7, GTX 1060), this scene runs at 70 fps with the tracking system updating once 1-2 times per 10 frames (note the tracking refresh

@@ -217,7 +217,7 @@ namespace oti.AI
                             GameObject[] leavers = new GameObject[numConflicts];
                             string[] conflictorAffiliations = new string[numConflicts];
 
-                            // fill conflict data
+                            // fill end conflict data
                             for (int i = 0; i < numConflicts; i++)
                             {
                                 int m = TrackedObjectStates.LeavingIDs[endParentID][i];
