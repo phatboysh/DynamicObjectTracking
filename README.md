@@ -28,16 +28,18 @@ one more *Tracked Field* (in any instance of WorldMonitors) where the tracked ob
 
 Any number of WorldMonitors can be used. If multiple instances of WorldMonitors will be tracking the same object, that object must appear under
 the same field for every instance of WorldMonitors tracking it. See how PinkSphere (1) appears in the following (separate) instances of 
-WorldMonitors - it is under "Set B" for each instance. The order of objects in Set B can be different for each WorldMonitors instance.
+WorldMonitors - it is under "Set B" for each instance. The order of objects in Set B can be different for each WorldMonitors instance. Also note
+that the threshold sizes are the same for each field; this is enforced by the custom inspector code every time a value is changed so you won't
+need to check across all instances of WorldMonitors for continuity.
 
 **Multiple WorldMonitors Instances - Use Symmetrical Fields**
 <br/>
-<img src="Images/inspSymmetricObjects_1.PNG" width="333" />
-<img src="Images/inspSymmetricObjects_2.PNG" width="333" />
+<img src="Images/inspSymmetricObjects.PNG" width="655" />
 <br/>
 <br/>
 
 **The WorldMonitor Component**
+
 <br/>
 <br/>
 <img src="Images/worldMonitor.PNG" width="333" />

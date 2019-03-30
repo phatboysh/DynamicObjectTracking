@@ -135,24 +135,45 @@ namespace oti.AI
 
             if(instance.ThresholdSet.Count > 0)
             {
+                float tThreshold = instance.ThresholdSet[0];
                 OTIEditorUtility.Instance.HorizontalLineProperty(ref instance.ThresholdSet, 0, "Tracked Object Set A", "Threshold Distance A", "Assign objects for tracking against each other. Set A will be tracked against all others.");
                 trackedObjectListManager(0, guiContent, headingStyle, subHeadingStyle, "", "Tracked Objects", ref show[0], padding: 1);
 
+                if (instance.ThresholdSet[0] != tThreshold)
+                    enforceStaticThreshold(0, instance.ThresholdSet[0]);
+                
                 for (int i = 1; i < numberTrackedFields; i++)
                 {
+                    tThreshold = instance.ThresholdSet[i];
                     OTIEditorUtility.Instance.HorizontalLineProperty(ref instance.ThresholdSet, i, "Tracked Object Set " + OTIEditorBase._AlphabetAssembler(i), "Threshold Distance " + OTIEditorBase._AlphabetAssembler(i), "Assign objects for tracking against each other. Set " + OTIEditorBase._AlphabetAssembler(i) + " will be tracked against all others.");
                     trackedObjectListManager(i, guiContent, headingStyle, subHeadingStyle, "", "Tracked Objects", ref show[i], padding: 1);
+                    serializedObject.ApplyModifiedProperties();
+
+                    if (instance.ThresholdSet[i] != tThreshold)                    
+                        enforceStaticThreshold(i, instance.ThresholdSet[i]);                    
                 }
             }
 
             serializedObject.ApplyModifiedProperties();
         }
 
-        /// <summary>
-        /// Similar to method in AIEditor class but modified for WorldMonitors.
-        /// </summary>
-        /// <param name="i">Current index of TrackedObjects list.</param>
-        private void trackedObjectListManager(int i, GUIContent guiText, GUIStyle headingStyle, GUIStyle subHeadingStyle, string typeOfFactor, string head, ref bool showField, int padding = default(int))
+        private void enforceStaticThreshold(int index, float threshold)
+        {
+            WorldMonitors[] agentMonitors = GameObject.FindObjectsOfType<WorldMonitors>();
+
+            for (int i = 0; i < agentMonitors.Length; i++)
+            {
+                if (index < agentMonitors[i].ThresholdSet.Count)
+                    agentMonitors[i].ThresholdSet[index] = threshold;
+            }
+        }
+
+
+    /// <summary>
+    /// Similar to method in AIEditor class but modified for WorldMonitors.
+    /// </summary>
+    /// <param name="i">Current index of TrackedObjects list.</param>
+    private void trackedObjectListManager(int i, GUIContent guiText, GUIStyle headingStyle, GUIStyle subHeadingStyle, string typeOfFactor, string head, ref bool showField, int padding = default(int))
         {
             Rect plotSpace = new Rect();
             plotSpace = GUILayoutUtility.GetLastRect();
