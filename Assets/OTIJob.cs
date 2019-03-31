@@ -20,8 +20,6 @@
         private readonly object JobHandle = new object();
 
         private Thread JobThread = null;
-
-        public Thread Main;
         
         public bool IsDone
         {
@@ -45,7 +43,6 @@
 
         public virtual void StartOctree(OctreeThreadParameters otp)
         {
-            Main = Thread.CurrentThread;
             JobThread = new Thread(new ParameterizedThreadStart(runOctree));
             JobThread.Start(otp);
         }

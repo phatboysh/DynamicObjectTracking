@@ -3,9 +3,10 @@
 A multithreaded implementation of [Nition's Octree for Unity](https://github.com/Nition/UnityOctree) allowing for discriminatory
 object tracking with large numbers of moving GameObjects.
 
-Use of this system is comparable to using trigger colliders with hard coded switch or if else statements, however the objects tracked and
-the information receivers are easily selected at your discretion (no sifting through an enormous amount of potential collider data). This
-is also a viable option for collision detection if you wish to escape PhysX and spherical colliders can meet your needs.
+Use of the point Octree system is comparable to using trigger colliders with hard coded switch or if else statements, however the objects tracked and
+the information receivers are easily selected at your discretion (no more sifting through enormous amounts of collider data). This
+is also a viable option for collision detection if you wish to escape PhysX (and spherical colliders can meet your needs). The primary benefit
+here is getting optimized spatial calculations without interfering with anything you (or perhaps your users) are doing with trigger colliders.
 
 Any number of agents can track up to 701 classes / fields of objects (a thru zz), and *each field may contain any number of tracked objects*.
 Although 701 different fields of tracked objects is likely beyond any need - additional fields can be added at runtime (see public methods).
@@ -13,6 +14,11 @@ Although 701 different fields of tracked objects is likely beyond any need - add
 Every field has its own distance threshold value defining when it registers other tracked objects. Once another tracked object registers,
 an event is published to the subscribers (typically an agent or a game manager) monitoring that object. The event publishes the registered 
 GameObjects inside the threshold (GameObject[]) and their associated object field types (string[] "a","b","c"...).
+
+Additionally, this package can configured to forego Octree implementation and simply automate trigger configuration across your selected fields of
+tracked objects. Both the Octree and Trigger configurations produce the same discriminatory data - reported the same way - to monitoring agents.
+You can easily benchmark the two against each other. Choosing to have this system automate trigger configurations for you will obviously negate
+any benefits afforded by using the Octree implementation.
 
 # Getting Started
 
@@ -38,9 +44,7 @@ need to check across all instances of WorldMonitors for continuity.
 <br/>
 <br/>
 
-**The WorldMonitor Component**
-
-<br/>
+**The WorldMonitor Component - Singleton**
 <br/>
 <img src="Images/worldMonitor.PNG" width="333" />
 <br/>
@@ -76,13 +80,14 @@ These two events are mutually exclusive; subcribe to ConflictLeavers if you need
 ConflictEnd is only emitted when *all* tracked objects have vacated a threshold area. 
 
 # Public Methods
-  > void ChangeThresholdSize(float threshold, GameObject trackedObject = default(GameObject), string objectType = default(string))
+  > void ChangeThresholdSize(float threshold, GameObject trackedObject, string objectType)
 
  * **float threshold** the new threshold size you wish to set.
- * **GameObject trackedObject** (optional) the particular tracked object whos threshold you wish to change.
- * **string objectType** (optional) the field name of the threshold you'd like to change
+ * **GameObject trackedObject** *(Optional)* the particular tracked object whos threshold you wish to change.
+ * **string objectType** *(Optional)* the field name of the threshold you'd like to change
 
-*Remarks: you must include at least one of the optional arguments - - both options change the threshold size for an entire field, not individual objects.*
+*Remarks: you must include at least one of the optional arguments - - both options change the threshold size for an entire field, not individual objects.
+If you are using the trigger implementation, use the ChangeTriggerSize instead.*
 
   > void InsertNewTrackedObject(GameObject trackedObject, WorldMonitors owner, string objectAffiliation, float threshold)
 
@@ -93,10 +98,11 @@ ConflictEnd is only emitted when *all* tracked objects have vacated a threshold 
 
 *Remarks: see the example scenes for demonstration of usage.*
 
-  > void RemoveTrackedObject(GameObject trackedObject, WorldMonitors whoToRemove = default(WorldMonitors))
+  > void RemoveTrackedObject(GameObject trackedObject, WorldMonitors whoToRemove, bool retainOtherTrackers)
 
  * **GameObject trackedObject:** the tracked object to be removed.
- * **WorldMonitors whoToRemove:** you can remove individual trackers from tracked objects as they can be tracked by any number of agents
+ * **WorldMonitors whoToRemove:** *(Optional)* you can remove individual trackers from tracked objects as they can be tracked by any number of agents
+ * **bool retainOtherTrackers:** *(Optional)* set this argument true if you wish to remove only aspecified tracking agent.
 
 *Remarks: you should always remove the WorldMonitors owner when an agent is destroyed, or at the minimum unsubscribe from the events. see the example scenes for demonstration of usage.*
 
@@ -109,21 +115,28 @@ You will find the Tracker class in the example scenes, which demonstrates how to
 The last Tracking Agent in the heirarchy (in both scenes) is preconfigured to use some of the options.
 
 ## ** Scenes **
-
 # TrackingExample
 <br/>
-<img src="Images/trackingScene.PNG" width="500" />
+<img src="Images/trackingScene.PNG" width="650" />
 <br/>
-
 TrackingExample demonstrates the system's large scale dynamic object tracking ability, and an example method is used to change the tracked object's
 trajectories when conflicts are incurred by one enabled object (you can enable this behavior in the Tracker inspector). This scene includes
-500 initial tracked objects and inflates to 1,500 at runtime. All of these object's conflicts are always known by the agents monitoring them. 
-On a SurfaceBook (i7, GTX 1060), this scene runs at 70 fps with the tracking system updating once 1-2 times per 10 frames (note the tracking refresh
+500 initial tracked objects and inflates to 5,000 at runtime. All of these object's are configured to interact with thresholds beyond their size (like a trigger). 
+On a SurfaceBook (i7, GTX 1060), this scene runs at 45 fps with the tracking system updating once 1-2 times per 10 frames (note the tracking refresh
 rate on smaller scenes is about once/ frame). 
 
 # SmallTrackingExample
 <br/>
-<img src="Images/smallScene.PNG" width="600" />
+<img src="Images/smallScene.PNG" width="650" />
 <br/>
-
 This scene is preconfigured to log events to the console so you can quickly understand how and what data is published.
+
+# Important Points
+
+If you may be switching between the Octree and Trigger tracking methods, you should be aware of how the threshold and trigger radius differ.
+They are both a measure of the same thing (a spherical radius) however triggers emit collisions when the triggers cross each other's boundaries,
+not when the parent object crosses the boundary. **You can configure the WorldMonitor component to have triggers immitate the Octree behavior
+or visa-versa.** The difference between the two methods without configuring the WorldMonitor to immitate behaviors is shown below.
+<br/>
+<img src="Images/triggerVsOctreeConflict.PNG" width="650" />
+<br/>

@@ -60,25 +60,20 @@ namespace oti.AI
         public static bool _GizmosDrawn;
 
         /// <summary>
-        /// indicates if this component is the gizmos drawer
-        /// </summary>
-        private bool drawer;
-
-        /// <summary>
         /// Method called from subscriber in Tracker
         /// </summary>
         public void ObjectConflict(Vector3 positionOfInitiator)
         {
             float fr = Random.Range(-0.01f, 0.01f);
             //do something with the information -- note that object affiliation and all conflicting objects and types are available in the event
-            direction = Vector3.Cross(direction + new Vector3(fr,fr,fr), positionOfInitiator - transform.position); // jump into 3 dimensions
-            
-            Speed += 5;
-            Speed = Mathf.Max(MaxSpeed, Speed);
+            direction = Vector3.Cross(direction + new Vector3(fr,fr,fr), positionOfInitiator - transform.position).normalized; // jump into 3 dimensions
         }
 
         void Update()
         {
+            if (!MoveAuto)
+                return;
+
             bool xCrossed = Mathf.Abs(transform.position.x) > boundingBoxScale;
             bool zCrossed = Mathf.Abs(transform.position.z) > boundingBoxScale;
             bool yCrossed = Mathf.Abs(transform.position.y) > boundingBoxScale;
@@ -100,9 +95,9 @@ namespace oti.AI
                 escapedBounds = xCrossed || zCrossed || yCrossed;
             }
 
-            direction = xCrossed ? new Vector3(-direction.x, direction.y, direction.z).normalized : direction;
-            direction = zCrossed ? new Vector3(direction.x, direction.y, -direction.z).normalized : direction;
-            direction = yCrossed ? new Vector3(direction.x, -direction.y, direction.z).normalized : direction;
+            direction = xCrossed ? new Vector3(-direction.x, direction.y, direction.z) : direction;
+            direction = zCrossed ? new Vector3(direction.x, direction.y, -direction.z) : direction;
+            direction = yCrossed ? new Vector3(direction.x, -direction.y, direction.z) : direction;
                        
 
             transform.Translate(Speed * direction * Time.deltaTime, Space.World);

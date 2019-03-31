@@ -67,6 +67,20 @@ namespace oti.AI
             {
                 new GameObject(gameObject.name + "_WMContainer", typeof(WorldMonitor));
             }
+
+            if(WorldMonitor.Instance.TrackingMode == TrackingMode.UnityTriggers)
+            {
+                foreach (TrackedObjectContainer toc in TrackedObjects)
+                {
+                    foreach (GameObject go in toc.TrackedObjects)
+                    {
+                        if (!go.GetComponent<TrackedObjectTriggers>())
+                            go.AddComponent<TrackedObjectTriggers>();
+
+                        go.GetComponent<TrackedObjectTriggers>().AcceptOwner(this);
+                    }
+                }
+            }
         }        
     }
 
@@ -157,6 +171,9 @@ namespace oti.AI
             serializedObject.ApplyModifiedProperties();
         }
 
+        /// <summary>
+        /// Ensures threshold sizes are consistent across all instances
+        /// </summary>
         private void enforceStaticThreshold(int index, float threshold)
         {
             WorldMonitors[] agentMonitors = GameObject.FindObjectsOfType<WorldMonitors>();

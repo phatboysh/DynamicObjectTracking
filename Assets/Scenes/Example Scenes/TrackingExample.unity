@@ -3348,7 +3348,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &118095217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8857,7 +8858,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &368641907
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14565,7 +14567,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &616634808
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17429,7 +17432,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &721699552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18996,6 +19000,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1640587718}
+  - {fileID: 1223186322}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -19634,7 +19639,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &821101464
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21420,7 +21426,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &891531033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26897,7 +26904,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &1092276295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29652,10 +29660,10 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1223186321}
   m_LocalRotation: {x: 0.1874422, y: -0.48814803, z: 0.1082198, w: 0.8454972}
-  m_LocalPosition: {x: 57.6, y: 20, z: -34.6}
+  m_LocalPosition: {x: 67.60999, y: 20.1, z: -23.519997}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
-  m_Father: {fileID: 2032123835}
+  m_Father: {fileID: 796034257}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 25, y: -60, z: 0}
 --- !u!81 &1223186323
@@ -38423,6 +38431,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ConflictEndMode: 0
+  TrackingMode: 0
+  TrackedObjectsUseGravity: 0
+  OctreeMimicTriggerInteraction: 0
+  TriggersMimicOctree: 0
+  MaximumObjectsAllowed: 5000
   ExhaustiveMethod: 0
   RestrictToMainThread: 0
   WorldOrigin: {x: 0, y: 0, z: 0}
@@ -38430,6 +38443,7 @@ MonoBehaviour:
   MinimumObjectSize: 1
   TotalTrackedObjects: 0
   AllocationSpace: 0
+  FreeSpace: 0
 --- !u!1 &1651040252
 GameObject:
   m_ObjectHideFlags: 0
@@ -43741,7 +43755,7 @@ GameObject:
   - component: {fileID: 1828269431}
   - component: {fileID: 1828269430}
   m_Layer: 0
-  m_Name: Tracking Agent 10 (Optioned)
+  m_Name: Tracking Agent 10 (see inspector configs)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -43765,7 +43779,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 1
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 1
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!114 &1828269431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48487,7 +48502,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 127923479}
-  - {fileID: 1223186322}
   m_Father: {fileID: 640459574}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -49298,7 +49312,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 0
 --- !u!1 &2058416035
 GameObject:
   m_ObjectHideFlags: 0
@@ -50410,7 +50425,7 @@ GameObject:
   - component: {fileID: 2094939065}
   - component: {fileID: 2094939064}
   m_Layer: 0
-  m_Name: Tracking Agent 1
+  m_Name: Tracking Agent 1 (see inspector configs)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -50434,7 +50449,8 @@ MonoBehaviour:
   InsertNewObjectOnEnter: 0
   ExampleInsertionObject: {fileID: 759545789}
   DestroyConflictingObjects: 0
-  RunDemoMethod: 0
+  CrossProductCollisions: 0
+  Demo: 1
 --- !u!114 &2094939065
 MonoBehaviour:
   m_ObjectHideFlags: 0

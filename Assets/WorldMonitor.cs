@@ -1,7 +1,6 @@
 ﻿using oti.Editors;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 
 namespace oti.AI
 {
@@ -10,6 +9,12 @@ namespace oti.AI
         OnAllConflictsEnded,
         OnIndividualConflictEnded,
         NoConflictEndEvents
+    }
+
+    public enum TrackingMode
+    {
+        Octree,
+        UnityTriggers
     }
 
     /// <summary>
@@ -26,6 +31,21 @@ namespace oti.AI
 
         [Tooltip("Choosing OnAllConflictsEnded will only raise an events when every conflicting object has left the conflict area.")]
         public ConflictEndMode ConflictEndMode = ConflictEndMode.OnIndividualConflictEnded;
+
+        [Tooltip("Octree runs on aux thread independent of Unity. Using triggers will place trigger colliders on all tracked objects.")]
+        public TrackingMode TrackingMode = TrackingMode.Octree;
+
+        [Tooltip("If using UnityTriggers tracking mode, specify whether or not tracked objects will use rigidbodies with gravity enabled.")]
+        public bool TrackedObjectsUseGravity;
+
+        [Tooltip("Triggers set one another off when the colliders themselves collide, not just the object. This behavior can be replicated by choosing true here.")]
+        public bool OctreeMimicTriggerInteraction;
+
+        [Tooltip("The octree system will only register conflicts when an object has entered another threshold, however triggers interact based off their collider sizes. You can mimic the octree behavior here.")]
+        public bool TriggersMimicOctree;
+
+        [Tooltip("Set this value to place a cap on the total objects you wish to allow into tracking system. If you have no cap, set arbitrarily large (no larger than 2,147,483,646)")]
+        public int MaximumObjectsAllowed = 5000;
 
         [Header("Testing Tools")]
         /// <summary>
@@ -53,7 +73,7 @@ namespace oti.AI
         /// <summary>
         /// Reference to an object's ID to facilitate removal at runtime.
         /// </summary>
-        private Dictionary<GameObject, int> gameObjectIDReference = new Dictionary<GameObject, int>();
+        public Dictionary<GameObject, int> GameObjectIDReference = new Dictionary<GameObject, int>();
 
         /// <summary>
         /// Reference to an object's ID to facilitate removal at runtime.
@@ -102,9 +122,20 @@ namespace oti.AI
         public int AllocationSpace;
 
         /// <summary>
+        /// True when tracking less than the total object limit as defined by user
+        /// </summary>
+        [HideInInspector]
+        public bool FreeSpace;
+
+        /// <summary>
         /// If the world monitor has performed its set up
         /// </summary>
         private bool initialized;
+
+        /// <summary>
+        /// Indicates if user chose triggers as preferred tracking method.
+        /// </summary>
+        private bool usingTriggers;
 
         /// <summary>
         /// number of frames it has taken for the octree to update
@@ -135,10 +166,10 @@ namespace oti.AI
 
         void Update()
         {
-            if (ExhaustiveMethod)
+            if (ExhaustiveMethod || usingTriggers) // if you are not using these features you can remove this if statement
             {
-                //this is only intended for benchmarking
-                exhaustiveCalculation();
+                if(ExhaustiveMethod)
+                    exhaustiveCalculation();
                 return;
             }
 
@@ -172,8 +203,8 @@ namespace oti.AI
                             conflictorAffiliations[i] = TrackedObjectAffiliations[m];
                         }
 
-                        foreach (WorldMonitors wm in TOData.ObjectOwners) //inform the agents monitoring this object
-                            wm.RaiseConflictEnterers(TOData.Object, conflictors, conflictorAffiliations);
+                        foreach (WorldMonitors wm in TOData.ObjectOwners) //inform the agents monitoring this object}                        
+                            wm.RaiseConflictEnterers(TOData.Object, conflictors, conflictorAffiliations);                                                   
                     }
                 }
 
@@ -185,6 +216,7 @@ namespace oti.AI
                 }
 
                 handleEndConflicts(ConflictEndMode, TrackedObjectStates);
+
                 Octree.ThreadOctreeInit(otp, RestrictToMainThread);
             }
             else
@@ -217,7 +249,7 @@ namespace oti.AI
                             GameObject[] leavers = new GameObject[numConflicts];
                             string[] conflictorAffiliations = new string[numConflicts];
 
-                            // fill end conflict data
+                            // fill conflict data
                             for (int i = 0; i < numConflicts; i++)
                             {
                                 int m = TrackedObjectStates.LeavingIDs[endParentID][i];
@@ -285,7 +317,7 @@ namespace oti.AI
             return trackedObjectPositions;
         }
 
-        void Start()
+        private void OnEnable()
         {
             if (!Instance)
             {
@@ -295,6 +327,11 @@ namespace oti.AI
             {
                 Destroy(gameObject);
             }
+        }
+
+        public void Start()
+        {
+            usingTriggers = TrackingMode == TrackingMode.UnityTriggers;
 
             agentMonitors = GameObject.FindObjectsOfType<WorldMonitors>();
 
@@ -308,22 +345,34 @@ namespace oti.AI
                 {
                     for (int k = 0; k < agentMonitors[i].TrackedObjects[j].TrackedObjects.Count; k++)
                     {
-                        float threshold = agentMonitors[i].ThresholdSet[j];
+                        // double threshold size if user wishes for point octree to mimic trigger interaction distances
+                        float threshold = (OctreeMimicTriggerInteraction && TrackingMode == TrackingMode.Octree) ? agentMonitors[i].ThresholdSet[j] * 3/2 : agentMonitors[i].ThresholdSet[j];
+
                         GameObject go = agentMonitors[i].TrackedObjects[j].TrackedObjects[k];
 
                         if (go) // allows user to leave empty gameobject slots in tracked object inspector
                         {
                             int id;
-                            if (gameObjectIDReference.TryGetValue(go, out id))
+                            if (GameObjectIDReference.TryGetValue(go, out id))
                             {
                                 TrackedObjectData TOData;
                                 TrackedObjectDataRef.TryGetValue(id, out TOData);
                                 TOData.ObjectOwners.Add(agentMonitors[i]);
                                 TrackedObjectDataRef[id] = TOData;
+
+                                if(usingTriggers)
+                                {
+                                    // WorldMonitors will declare ownership in its Start() method
+
+                                    if(!go.GetComponent<TrackedObjectTriggers>())
+                                        go.AddComponent<TrackedObjectTriggers>();
+
+                                    go.GetComponent<TrackedObjectTriggers>().Initialize();
+                                }
                             }
                             else
                             {
-                                gameObjectIDReference.Add(go, TotalTrackedObjects); //object ID = current number of tracked objects
+                                GameObjectIDReference.Add(go, TotalTrackedObjects); //object ID = current number of tracked objects
                                 gameObjectReference.Add(TotalTrackedObjects, go); //using IDs necessary to run aux thread
 
                                 TrackedObjectData TOData = new TrackedObjectData
@@ -332,10 +381,18 @@ namespace oti.AI
                                     Threshold = threshold,
                                     ObjectOwners = new List<WorldMonitors>()
                                 };
-                                TOData.ObjectOwners.Add(agentMonitors[i]);
 
+                                TOData.ObjectOwners.Add(agentMonitors[i]);
                                 TrackedObjectDataRef.Add(TotalTrackedObjects, TOData);
                                 TrackedObjectAffiliations.Add(TotalTrackedObjects, OTIEditorBase._AlphabetAssembler(j));
+
+                                if (usingTriggers)
+                                {
+                                    if (!go.GetComponent<TrackedObjectTriggers>())
+                                        go.AddComponent<TrackedObjectTriggers>();
+                                    go.GetComponent<TrackedObjectTriggers>().Initialize();
+                                }
+
                                 TotalTrackedObjects++;
                             }
                         }
@@ -344,11 +401,12 @@ namespace oti.AI
             }
 
             AllocationSpace = TotalTrackedObjects;
+            FreeSpace = MaximumObjectsAllowed - AllocationSpace >= 0;
 
-            Octree = new Octree
-            {
-                Main = System.Threading.Thread.CurrentThread
-            };
+            if (usingTriggers || ExhaustiveMethod)
+                return; // no more set up required; switching between modes is not allowed at runtime.
+
+            Octree = new Octree();
 
             //configure tracked object states at start
             for (int i = 0; i < TotalTrackedObjects; i++)
@@ -396,12 +454,12 @@ namespace oti.AI
                 DynamicObjects = TrackedObjectAffiliations
             };
 
-            Octree.ThreadOctreeInit(otp, RestrictToMainThread);
+            //Octree.ThreadOctreeInit(otp, RestrictToMainThread);
         }
 
         private void OnDestroy() //kill outstanding thread
         {
-            Octree.Abort();
+            Octree?.Abort();
         }
 
         /// <summary>
@@ -434,7 +492,7 @@ namespace oti.AI
                                         {
                                             if ((_go.transform.position - go.transform.position).sqrMagnitude < threshold * threshold)
                                             {
-                                                int id = gameObjectIDReference[go];
+                                                int id = GameObjectIDReference[go];
                                                 TrackedObjectData TOData;// = TrackedObjectDataRef[parentID];
                                                 TrackedObjectDataRef.TryGetValue(id, out TOData);
 
@@ -465,7 +523,7 @@ namespace oti.AI
             if (trackedObject != default(GameObject))
             {
                 int id;
-                if (gameObjectIDReference.TryGetValue(trackedObject, out id)) //if the user passes in a non tracked GameObject, don't try to modify threshold
+                if (GameObjectIDReference.TryGetValue(trackedObject, out id)) //if the user passes in a non tracked GameObject, don't try to modify threshold
                 {
                     TrackedObjectDataRef[id].Threshold = threshold;
                 }
@@ -487,6 +545,41 @@ namespace oti.AI
         }
 
         /// <summary>
+        /// Choose either a GameObject or entire field type's trigger size to change. One must be used or the method will fail!
+        /// </summary>
+        /// <param name="trackedObject">The GameObject to change the threshold for.</param>
+        /// <param name="objectType">The field name of this object (e.g. "A", "B", "C" etc from field name "Tracked Object Set"</param>
+        /// <param name="threshold">The new threshold for this set</param>
+        /// <remarks> Changing an entire field type's trigger radius is slow and only recommended for small sets of tracked objects. </remarks>
+        public void ChangeTriggerSize(float threshold, GameObject trackedObject = default(GameObject), string objectType = default(string))
+        {
+            if(!usingTriggers)
+            {
+                Debug.LogWarning("Changing tracked object trigger sizes will do nothing without using Unity Trigger mode!");
+                return;
+            }
+
+            if (trackedObject != default(GameObject))
+            {
+                trackedObject.GetComponent<SphereCollider>().radius = threshold;
+            }
+            else if (objectType != default(string))
+            {
+                foreach (int id in TrackedObjectAffiliations.Keys)
+                {
+                    if (string.Compare(TrackedObjectAffiliations[id], objectType) == 0)
+                    {
+                        gameObjectReference[id].GetComponent<SphereCollider>().radius = threshold;
+                    }
+                }
+            }
+            else
+            {
+                throw new System.Exception("To change threshold size, either a tracked object class type or specific GameObject must be provided as an argument.");
+            }
+        }
+
+        /// <summary>
         /// Runtime objects should be inserted into the tracking system here.
         /// </summary>
         /// <param name="trackedObject">The object to be tracked.</param>
@@ -496,10 +589,14 @@ namespace oti.AI
         /// <remarks>Due to the cost associated with this operation, perform minimal additions per frame or run from coroutine</remarks>
         public void InsertNewTrackedObject(GameObject trackedObject, WorldMonitors owner, string objectAffiliation, float threshold)
         {
-            if (!RestrictToMainThread)
+            if (!FreeSpace)
+                return;
+
+            if (usingTriggers)
             {
-                Octree.Abort(); // this operation is not threadsafe so the job must be aborted
-                Octree.IsDone = true; // allow for access back into thread
+                handleTriggerAddition(trackedObject, owner, objectAffiliation, threshold);
+                FreeSpace = MaximumObjectsAllowed - AllocationSpace > 0;
+                return;
             }
 
             /*
@@ -508,7 +605,7 @@ namespace oti.AI
              */
 
             int id;
-            if (gameObjectIDReference.TryGetValue(trackedObject, out id))
+            if (GameObjectIDReference.TryGetValue(trackedObject, out id))
             {
                 // allow for user to add new trackers to one object
                 TrackedObjectData TOData;
@@ -519,13 +616,13 @@ namespace oti.AI
             }
             else
             {
-                gameObjectIDReference.Add(trackedObject, AllocationSpace);
+                GameObjectIDReference.Add(trackedObject, AllocationSpace);
                 gameObjectReference.Add(AllocationSpace, trackedObject);
 
                 TrackedObjectData TOData = new TrackedObjectData
                 {
                     Object = trackedObject,
-                    Threshold = threshold,
+                    Threshold = OctreeMimicTriggerInteraction ? 3/2 * threshold : threshold,
                     ObjectOwners = new List<WorldMonitors>()
                 };
 
@@ -541,6 +638,7 @@ namespace oti.AI
                 AllocationSpace++;
 
                 Octree.TrackedObjectStates = TrackedObjectStates;
+                FreeSpace = MaximumObjectsAllowed - AllocationSpace >= 0;
             }
         }
 
@@ -551,17 +649,18 @@ namespace oti.AI
         /// <param name="trackedObject">The object to be tracked.</param>
         /// <param name="owner">The agent tracking this object.</param>
         /// <param name="whoToRemove">Optional - identify a particular WorldMonitors to remove while leaving other trackers in place.</param>
+        /// <param name="retainOtherTrackers">Optional - if selected, only the specified WorldMonitors (agent) will be removed from the Object's tracker list.</param>
         /// <remarks>Due to the cost associated with this operation, perform minimal additions per frame or run from coroutine</remarks>
-        public void RemoveTrackedObject(GameObject trackedObject, WorldMonitors whoToRemove = default(WorldMonitors))
+        public void RemoveTrackedObject(GameObject trackedObject, WorldMonitors whoToRemove = default(WorldMonitors), bool retainOtherTrackers = default(bool))
         {
-            if (!RestrictToMainThread)
+            if (usingTriggers)
             {
-                Octree.Abort(); // this operation is not threadsafe so the job must be aborted
-                Octree.IsDone = true; // allow for access back into thread
+                handleTriggerRemoval(trackedObject, whoToRemove, retainOtherTrackers);
+                return;
             }
 
             int removalID;
-            gameObjectIDReference.TryGetValue(trackedObject, out removalID);
+            GameObjectIDReference.TryGetValue(trackedObject, out removalID);
 
             if (whoToRemove != default(WorldMonitors))
             {
@@ -570,7 +669,7 @@ namespace oti.AI
                 {
                     Octree.PointOctree.Remove(removalID);
                 }
-                else
+                else if(retainOtherTrackers)
                 {
                     return;
                 }
@@ -585,11 +684,70 @@ namespace oti.AI
             // to reinsert later, TrackedObjectDataRef needs updated.
             TrackedObjectDataRef.Remove(removalID);
 
+            /*
+             TODO: test -- FreeSpace = MaximumObjectsAllowed - AllocationSpace >= 0;
+             allow for space to be opened back up -- may be LINQ intensive
+             */
+
             TotalTrackedObjects--;
         }
         #endregion
-    }
 
+        /// <summary>
+        /// Handles object removal when user is using Unity triggers
+        /// </summary>
+        private void handleTriggerRemoval(GameObject trackedObject, WorldMonitors whoToRemove = default(WorldMonitors), bool retainOtherTrackers = default(bool))
+        {
+            if (whoToRemove != default(WorldMonitors))
+            {
+                gameObject.GetComponent<TrackedObjectTriggers>().LoseOwner(whoToRemove);
+                if (retainOtherTrackers)
+                    return;
+            }
+
+            TrackedObjectTriggers tot = gameObject.GetComponent<TrackedObjectTriggers>();
+
+            if (tot)
+                tot.wms = new List<WorldMonitors>(); // empty it.
+
+            TotalTrackedObjects--;            
+            return;
+        }
+
+        /// <summary>
+        /// Handles addition of new tracked object if user is using Unity triggers.
+        /// </summary>
+        private void handleTriggerAddition(GameObject trackedObject, WorldMonitors owner, string objectAffiliation, float threshold)
+        {
+            if(!trackedObject.GetComponent<TrackedObjectTriggers>())
+                trackedObject.AddComponent<TrackedObjectTriggers>();
+
+            TrackedObjectTriggers tot = trackedObject.GetComponent<TrackedObjectTriggers>();
+
+            GameObjectIDReference.Add(trackedObject, AllocationSpace);
+            gameObjectReference.Add(AllocationSpace, trackedObject);
+
+            TrackedObjectData TOData = new TrackedObjectData
+            {
+                Object = trackedObject,
+                Threshold = TriggersMimicOctree ? 0.75f * threshold : threshold,
+                ObjectOwners = new List<WorldMonitors>()
+            };
+
+            if (owner)
+            {
+                TOData.ObjectOwners.Add(owner);
+                tot.AcceptOwner(owner);
+            }
+
+            TrackedObjectDataRef.Add(AllocationSpace, TOData);
+            TrackedObjectAffiliations.Add(AllocationSpace, objectAffiliation);
+
+            TotalTrackedObjects++;
+            AllocationSpace++;
+            tot.Initialize();     
+        }
+    }
 
     /// <summary>
     /// The only threadsafe tracked object information

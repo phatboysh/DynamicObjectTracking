@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
+﻿using UnityEngine;
+using System.Collections;
 namespace oti.AI
 {
     /// <summary>
@@ -40,6 +38,9 @@ namespace oti.AI
         // Demonstration of event subscription
         void Start()
         {
+            sColor = Color.blue;
+            eColor = Color.red;
+
             if (GetComponent<WorldMonitors>())
             {
                 WorldMonitors = GetComponent<WorldMonitors>();
@@ -48,6 +49,10 @@ namespace oti.AI
                 WorldMonitors.ConflictEnterers += entererListener;
                 WorldMonitors.ConflictLeavers += leaverListener;
                 WorldMonitors.ConflictEnd += endListener;
+
+                if (Demo)
+                    StartCoroutine(demo());
+
                 return;
             }
 
@@ -98,10 +103,22 @@ namespace oti.AI
         /// Runs an example method in example navigator class.
         /// </summary>
         [Tooltip("Uses a tracking system event to run a method for pure demo purposes You cannot destroy objects if using this method.")]
-        public bool RunDemoMethod;
+        public bool CrossProductCollisions;
 
-        // arbitrary limit for demo
-        private int totalObjCap = 1500;
+        /// <summary>
+        /// Triggers a coroutine to wait and change parameters for visual effects
+        /// </summary>
+        public bool Demo;
+
+        /// <summary>
+        /// Starting interpolation color value for added objects
+        /// </summary>
+        static Color sColor;
+
+        /// <summary>
+        /// Ending interpolation color value for added objects
+        /// </summary>
+        static Color eColor;
 
         /// <summary>
         /// This method shows how to handle objects raising a conflict with a TrackedObject
@@ -116,14 +133,15 @@ namespace oti.AI
                 if (PrintConflictsToConsole)
                     Debug.Log("        -- (" + gameObject.name + ") " + ConflictingObjects[i] + " of type: " + ConflictingTypes[i]);
 
-                if (InsertNewObjectOnEnter && WorldMonitor.Instance.AllocationSpace <= totalObjCap)
+                if (InsertNewObjectOnEnter && WorldMonitor.Instance.FreeSpace)
                 {
                     GameObject go = Instantiate(ExampleInsertionObject, Vector3.zero, Quaternion.identity);
                     go.name = "NewGameObject_" + WorldMonitor.Instance.AllocationSpace;
                     go.AddComponent<ExampleNavigator>();
                     go.SetActive(true);
-                    go.GetComponent<Renderer>().material.color = Color.LerpUnclamped(Color.blue, Color.red, Time.time);
-                    WorldMonitor.Instance.InsertNewTrackedObject(go, WorldMonitors, "YouCanMakeThisAnything!", 0);
+                    go.GetComponent<Renderer>().material.color = Color.Lerp(sColor, eColor, Mathf.Sin(0.5f * Time.time));
+                    go.transform.position = new Vector3(Random.Range(-6, 6), Random.Range(-6, 6), Random.Range(-6, 6)); // [-6,6] ensures eventual collision with center object.
+                    WorldMonitor.Instance.InsertNewTrackedObject(go, WorldMonitors, "YouCanMakeThisAnything", 2);
                 }
 
                 if (DestroyConflictingObjects)
@@ -132,10 +150,10 @@ namespace oti.AI
                     Destroy(ConflictingObjects[i]);
                 }
 
-
-                if (RunDemoMethod && !DestroyConflictingObjects)
+                if (CrossProductCollisions && !DestroyConflictingObjects)
                 {
-                    ConflictingObjects[i].GetComponent<ExampleNavigator>().ObjectConflict(TrackedObject.transform.position);
+                    if(ConflictingObjects[i])
+                        ConflictingObjects[i].GetComponent<ExampleNavigator>().ObjectConflict(TrackedObject.transform.position);
                 }
             }
         }
@@ -164,6 +182,20 @@ namespace oti.AI
         {
             if (PrintConflictsToConsole)
                 Debug.Log("GameObject " + TrackedObject + "'s conflict(s) have ended and logged for " + gameObject.name);
+        }
+
+        /// <summary>
+        /// Solely to look interesting :)
+        /// </summary>
+        private IEnumerator demo()
+        {
+            float t = Time.time;
+            yield return new WaitWhile(() => Time.time - t < 10);
+
+            sColor = Color.red;
+            eColor = Color.yellow;
+
+            CrossProductCollisions = true;
         }
     }
 }

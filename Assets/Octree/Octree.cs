@@ -39,14 +39,6 @@ namespace oti.AI
         /// </summary>
         private Vector3[] updatePositions;
 
-        //thread management
-        public Thread IntendedAltThread;
-        public Thread MainCheck;
-
-        //thread management
-        private int threadsStarted;
-        private int threadsFinished;
-
         /// <summary>
         /// Generate Nition PointOctree
         /// </summary>
@@ -67,12 +59,6 @@ namespace oti.AI
                 return;
             }
 
-            if (threadsFinished != threadsStarted)
-                Debug.LogWarning("Octree may be running on more than one thread simultaneously. finished: " + threadsFinished + ", started: " + threadsStarted);
-
-            threadsStarted++;
-
-            MainCheck = System.Threading.Thread.CurrentThread;
             ThreadRunning = true;
 
             IsDone = false;
@@ -83,8 +69,6 @@ namespace oti.AI
         {
             TrackedObjectStates = evaluateOctree(otp);
             IsDone = true; // TrackedObjectStates are defined - - eliminating race conditions
-            
-            IntendedAltThread = System.Threading.Thread.CurrentThread;
         }
 
         /// <summary>
@@ -92,13 +76,7 @@ namespace oti.AI
         /// </summary>
         protected override void OctreeThreadFinished()
         {
-            threadsFinished++;
-            ThreadRunning = false;
-
-            bool threadsEqual = Main == MainCheck;
-
-            if (Main != System.Threading.Thread.CurrentThread)            
-                Debug.LogError("unexpected thread execution - Octree results reported on background thread! Main == MainCheck ? " + threadsEqual);                       
+            ThreadRunning = false; 
         }
 
         /// <summary>
