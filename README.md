@@ -6,7 +6,7 @@ object tracking with large numbers of moving GameObjects.
 Use of the point Octree system is comparable to using trigger colliders with hard coded switch or if else statements, however the objects tracked and
 the information receivers are easily selected at your discretion (no more sifting through enormous amounts of collider data). This
 is also a viable option for collision detection if you wish to escape PhysX (and spherical colliders can meet your needs). The primary benefit
-here is getting optimized spatial calculations without interfering with anything you (or perhaps your users) are doing with trigger colliders.
+is getting optimized spatial calculations without interfering with anything you (or perhaps your users) are doing with trigger colliders.
 
 Any number of agents can track up to 701 classes / fields of objects (a thru zz), and *each field may contain any number of tracked objects*.
 Although 701 different fields of tracked objects is likely beyond any need - additional fields can be added at runtime (see public methods).
@@ -15,10 +15,18 @@ Every field has its own distance threshold value defining when it registers othe
 an event is published to the subscribers (typically an agent or a game manager) monitoring that object. The event publishes the registered 
 GameObjects inside the threshold (GameObject[]) and their associated object field types (string[] "a","b","c"...).
 
-Additionally, this package can configured to forego Octree implementation and simply automate trigger configuration across your selected fields of
-tracked objects. Both the Octree and Trigger configurations produce the same discriminatory data - reported the same way - to monitoring agents.
-You can easily benchmark the two against each other. Choosing to have this system automate trigger configurations for you will obviously negate
-any benefits afforded by using the Octree implementation.
+Additionally, this package can configured to forego Octree implementation and simply automate Unity's Collider trigger configuration across your 
+selected fields of tracked objects. Both the Octree and Trigger configurations produce the same discriminatory data - reported the same way - to 
+monitoring agents. You can easily benchmark the two against each other. Choosing to have this system automate trigger configurations for you will 
+obviously negate any benefits afforded by using the Octree implementation.
+
+20k Tracked Objects - colliding *only* with objects with that are different in color - using *no colliders or rigidbodies.*
+<img src="Images/20k.PNG" width="650" />
+<br/>
+
+The above scene uses a collision method that simply sets object direction to it's position minus the colliding objects position. Object scales are set to 
+match their *threshold* size. This scene averaged 20 fps on a 15" Surfacebook. When scene sizes get this large, collision detection loses accuracy,
+but crucially - the main thread remains unblocked.
 
 # Getting Started
 
