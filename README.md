@@ -15,7 +15,7 @@ Every field has its own distance threshold value defining when it registers othe
 an event is published to the subscribers (typically an agent or a game manager) monitoring that object. The event publishes the registered 
 GameObjects inside the threshold (GameObject[]) and their associated object field types (string[] "a","b","c"...).
 
-Additionally, this package can configured to forego Octree implementation and simply automate Unity's Collider trigger configuration across your 
+Additionally, this package can be configured to forego Octree implementation and simply automate Unity's Collider trigger configuration across your 
 selected fields of tracked objects. Both the Octree and Trigger configurations produce the same discriminatory data - reported the same way - to 
 monitoring agents. You can easily benchmark the two against each other. Choosing to have this system automate trigger configurations for you will 
 obviously negate any benefits afforded by using the Octree implementation.
@@ -26,12 +26,11 @@ obviously negate any benefits afforded by using the Octree implementation.
 
 The above scene uses a collision method that simply sets object direction to it's position minus the colliding objects position. Object scales are set to 
 match their *threshold* size. This scene averaged 20 fps on a 15" Surfacebook. When scene sizes get this large, collision detection loses accuracy,
-but crucially - the main thread remains unblocked.
+but crucially - the main thread remains unblocked (unless you choose the Unity Trigger implementation).
 
 # Getting Started
 
 **The Empty WorldMonitors Component**
-<br/>
 <br/>
 <img src="Images/inspInitial.PNG" width="333" />
 <br/>
@@ -124,7 +123,6 @@ The last Tracking Agent in the heirarchy (in both scenes) is preconfigured to us
 
 ## ** Scenes **
 # TrackingExample
-<br/>
 <img src="Images/trackingScene.PNG" width="650" />
 <br/>
 TrackingExample demonstrates the system's large scale dynamic object tracking ability, and an example method is used to change the tracked object's
@@ -134,7 +132,6 @@ On a SurfaceBook (i7, GTX 1060), this scene runs at 45 fps with the tracking sys
 rate on smaller scenes is about once/ frame). 
 
 # SmallTrackingExample
-<br/>
 <img src="Images/smallScene.PNG" width="650" />
 <br/>
 This scene is preconfigured to log events to the console so you can quickly understand how and what data is published.
