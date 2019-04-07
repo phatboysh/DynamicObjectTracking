@@ -63,7 +63,8 @@ This system will *never* use more than one auxilliary thread. If you wish, you m
 at the expense of performance.
 
 The exhaustive calculation is intended for benchmarking - however if you are using a very small number of tracked objects, exhaustive calculations
-may be better for your use case. This method raises the conflict event every frame, as such it's functionality is similar to OnTriggerStay().
+may be faster for your use case. This method raises the conflict event every frame, as such it's functionality is similar to OnTriggerStay(). It
+is of no value if you choose to implement the system's automated Unity Trigger configuration.
 
 # Events
 
@@ -94,7 +95,7 @@ ConflictEnd is only emitted when *all* tracked objects have vacated a threshold 
  * **string objectType** *(Optional)* the field name of the threshold you'd like to change
 
 *Remarks: you must include at least one of the optional arguments - - both options change the threshold size for an entire field, not individual objects.
-If you are using the trigger implementation, use the ChangeTriggerSize instead.*
+If you are using the trigger implementation, use the public ChangeTriggerSize() method instead.*
 
   > void InsertNewTrackedObject(GameObject trackedObject, WorldMonitors owner, string objectAffiliation, float threshold)
 

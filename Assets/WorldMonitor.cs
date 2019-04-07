@@ -444,17 +444,6 @@ namespace oti.AI
             // wipe initial results so conflicts existing before start register
             for (int i = 0; i < Octree.MasterList.Count; i++)
                 Octree.MasterList[i] = new List<int>();
-
-            //initialize another job to keep threadcount sync before update cycles
-            otp = new OctreeThreadParameters
-            {
-                ObjectIDs = new List<int>(TrackedObjectDataRef.Keys),
-                TotalTrackedObjects = TotalTrackedObjects,
-                Coordinates = getUpdatedPositions(new List<int>(TrackedObjectDataRef.Keys)),
-                DynamicObjects = TrackedObjectAffiliations
-            };
-
-            //Octree.ThreadOctreeInit(otp, RestrictToMainThread);
         }
 
         private void OnDestroy() //kill outstanding thread
