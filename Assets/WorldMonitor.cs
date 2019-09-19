@@ -1,4 +1,4 @@
-﻿using oti.Editors;
+﻿using oti.Utilities;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -384,7 +384,7 @@ namespace oti.AI
 
                                 TOData.ObjectOwners.Add(agentMonitors[i]);
                                 TrackedObjectDataRef.Add(TotalTrackedObjects, TOData);
-                                TrackedObjectAffiliations.Add(TotalTrackedObjects, OTIEditorBase._AlphabetAssembler(j));
+                                TrackedObjectAffiliations.Add(TotalTrackedObjects, OTIUtilities._AlphabetAssembler(j));
 
                                 if (usingTriggers)
                                 {
